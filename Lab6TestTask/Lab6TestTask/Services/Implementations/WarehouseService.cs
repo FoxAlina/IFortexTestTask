@@ -20,13 +20,20 @@ public class WarehouseService : IWarehouseService
 
     public async Task<Warehouse?> GetWarehouseAsync()
     {
-        return await _dbContext.Warehouses.GroupJoin(_dbContext.Products, warehouse => warehouse.WarehouseId, product => product.WarehouseId, (selectedWarehouse, selectedProducts) => new
-        {
-            selectedWarehouse,
-            TotalQuantity = selectedProducts.Where(product => product.Status == Enums.ProductStatus.ReadyForDistribution).Sum(product => product.Quantity)
-        })
-        .OrderByDescending(res => res.TotalQuantity)
-        .Select(res => res.w)
+        return await _dbContext.Warehouses.GroupJoin(
+            _dbContext.Products, 
+            warehouse => warehouse.WarehouseId, 
+            product => product.WarehouseId, 
+            (selectedWarehouse, selectedProducts) => 
+            new 
+            {
+                selectedWarehouse,
+                TotalQuantity = selectedProducts
+                    .Where(product => product.Status == Enums.ProductStatus.ReadyForDistribution)
+                    .Sum(product => product.Quantity)
+            })
+        .OrderByDescending(groupedWarehouse => groupedWarehouse.TotalQuantity)
+        .Select(sortResult => sortResult.selectedWarehouse)
         .FirstOrDefaultAsync();
     }
 
@@ -36,10 +43,10 @@ public class WarehouseService : IWarehouseService
         DateTime quaterEndDate = new DateTime(2025, 6, 30);
 
         return await _dbContext.Warehouses.Join(
-            _dbContext.Products, 
-            warehouse => warehouse.WarehouseId, 
-            product => product.WarehouseId, 
-            (selectedWarehouse, selectedProduct) => new { selectedWarehouse, selectedProduct })
+                _dbContext.Products, 
+                warehouse => warehouse.WarehouseId, 
+                product => product.WarehouseId, 
+                (selectedWarehouse, selectedProduct) => new { selectedWarehouse, selectedProduct })
             .Where(joinedData => joinedData.selectedProduct.ReceivedDate >= quaterStartDate && joinedData.selectedProduct.ReceivedDate <= quaterEndDate)
             .Select(joinedData => joinedData.selectedWarehouse).ToListAsync();
     }
