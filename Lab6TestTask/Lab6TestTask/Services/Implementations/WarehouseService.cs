@@ -28,11 +28,11 @@ public class WarehouseService : IWarehouseService
             new 
             {
                 selectedWarehouse,
-                TotalQuantity = selectedProducts
+                TotalAmount = selectedProducts
                     .Where(product => product.Status == Enums.ProductStatus.ReadyForDistribution)
-                    .Sum(product => product.Quantity)
+                    .Sum(product => product.Price)
             })
-        .OrderByDescending(groupedWarehouse => groupedWarehouse.TotalQuantity)
+        .OrderByDescending(groupedWarehouse => groupedWarehouse.TotalAmount)
         .Select(sortResult => sortResult.selectedWarehouse)
         .FirstOrDefaultAsync();
     }
